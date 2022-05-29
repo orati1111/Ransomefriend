@@ -4,8 +4,8 @@ import argparse
 import sys
 from cryptography.fernet import Fernet
 import os
-import time
 import glob
+import cryptography
 
 #Declaration
 opening = """
@@ -22,21 +22,6 @@ ______                                      __      _                _
 """
 
 #Defs
-def loading_animation_encrypt():
-        sys.stdout.write("Encrypting")
-        for i in range(5):
-            sys.stdout.write(".")
-            sys.stdout.flush()
-            time.sleep(1)
-        print("\n")
-
-def loading_animation_decrypt():
-        sys.stdout.write("Decrypting")
-        for i in range(5):
-            sys.stdout.write(".")
-            sys.stdout.flush()
-            time.sleep(1)
-        print("\n")
 
 def encrypt(path):
     # FILE
@@ -54,7 +39,6 @@ def encrypt(path):
         with open(path,"wb") as file:
             file.write(encrypted_content)
 
-        loading_animation_encrypt()
         print("Done!")
 
     # DIR
@@ -66,20 +50,24 @@ def encrypt(path):
         fernet = Fernet(key)
 
         glob_path = glob.glob(f'{path}/**', recursive=True)
+        print("Encrypting:")
         for i in range(len(glob_path)):
             file_path = glob_path[i]
             if(os.path.isdir(file_path)):
                 continue
             else:
-                with open(file_path,"rb") as file:
-                    original_content = file.read()
+                try:
+                    print(file_path)
+                    with open(file_path,"rb") as file:
+                        original_content = file.read()
 
-                encrypted_content = fernet.encrypt(original_content)
-
-                with open(file_path,"wb") as file:
-                    file.write(encrypted_content)
+                    encrypted_content = fernet.encrypt(original_content)
+                    
+                    with open(file_path,"wb") as file:
+                        file.write(encrypted_content)
+                except PermissionError:
+                    continue
             
-        loading_animation_encrypt()
         print("Done!")
     
     else:
@@ -102,7 +90,6 @@ def decrypt(path):
             with open(path,"wb") as file:
                 file.write(original)
 
-            loading_animation_decrypt()
             print("Done!")
 
     # DIR
@@ -113,20 +100,24 @@ def decrypt(path):
             fernet = Fernet(key)
 
             glob_path = glob.glob(f'{path}/**', recursive=True)
+            print("Decrypting:")
             for i in range(len(glob_path)):
                 file_path = glob_path[i]
                 if(os.path.isdir(file_path)):
                     continue
                 else:
-                    with open(file_path,"rb") as file:
-                        encrypted_content = file.read()
+                    try:
+                        print(file_path)
+                        with open(file_path,"rb") as file:
+                            encrypted_content = file.read()
 
-                    decrypted_content = fernet.decrypt(encrypted_content)
+                        decrypted_content = fernet.decrypt(encrypted_content)
 
-                    with open(file_path,"wb") as file:
-                        file.write(decrypted_content)
+                        with open(file_path,"wb") as file:
+                            file.write(decrypted_content)
+                    except (cryptography.fernet.InvalidToken, TypeError):
+                        continue
             
-            loading_animation_decrypt()
             print("Done!")
 
 
